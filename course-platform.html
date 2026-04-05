@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnFlow — Course Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:#0a0b0f; --surface:#13151c; --surface2:#1c1f2b;
+    --border:rgba(255,255,255,0.07);
+    --accent:#e8ff5a; --accent2:#5af0d4; --accent3:#ff6b6b;
+    --text:#f0f0f0; --muted:#6b7280;
+    --radius:14px; --radius-sm:8px;
+    --font-head:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+  }
+  html { scroll-behavior:smooth; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-body); font-size:15px; line-height:1.6; min-height:100vh; overflow-x:hidden; }
+  .view { display:none; opacity:0; transform:translateY(10px); transition:opacity 0.3s ease,transform 0.3s ease; min-height:100vh; }
+  .view.active { display:block; opacity:1; transform:translateY(0); }
+
+  /* NAV */
+  nav { position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 2.5rem; height:64px; background:rgba(10,11,15,0.9); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); }
+  .nav-logo { font-family:var(--font-head); font-size:1.2rem; font-weight:800; letter-spacing:-0.03em; cursor:pointer; display:flex; align-items:center; gap:6px; color:var(--text); text-decoration:none; }
+  .nav-logo span { color:var(--accent); }
+  .nav-breadcrumb { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--muted); flex-wrap:wrap; }
+  .crumb { cursor:pointer; transition:color 0.2s; }
+  .crumb:hover { color:var(--text); }
+  .crumb.active { color:var(--accent); font-weight:500; cursor:default; }
+  .sep { opacity:0.35; }
+
+  /* BUTTONS */
+  .btn { display:inline-flex; align-items:center; gap:7px; padding:9px 20px; border-radius:var(--radius-sm); font-family:var(--font-body); font-size:14px; font-weight:500; cursor:pointer; border:none; transition:all 0.2s; text-decoration:none; }
+  .btn-primary { background:var(--accent); color:#0a0b0f; }
+  .btn-primary:hover { background:#f5ff80; transform:translateY(-1px); box-shadow:0 6px 20px rgba(232,255,90,0.25); }
+  .btn-ghost { background:transparent; color:var(--text); border:1px solid var(--border); }
+  .btn-ghost:hover { border-color:rgba(255,255,255,0.18); background:var(--surface2); }
+  .btn-teal { background:var(--accent2); color:#0a0b0f; }
+  .btn-teal:hover { filter:brightness(1.1); transform:translateY(-1px); }
+  .btn-ai { background:linear-gradient(135deg,var(--accent2),#3dd6b5); color:#0a0b0f; font-weight:600; }
+  .btn-ai:hover { filter:brightness(1.08); transform:translateY(-1px); }
+
+  /* DASHBOARD */
+  .dashboard-hero { padding:4rem 2.5rem 2rem; max-width:1200px; margin:0 auto; }
+  .dashboard-hero h1 { font-family:var(--font-head); font-size:clamp(2rem,5vw,3.6rem); font-weight:800; letter-spacing:-0.04em; line-height:1.05; margin-bottom:0.7rem; }
+  .dashboard-hero h1 em { font-style:normal; color:var(--accent); }
+  .dashboard-hero p { color:var(--muted); font-size:1rem; font-weight:300; max-width:440px; }
+  .stats-bar { display:flex; gap:2rem; padding:1.5rem 2.5rem; max-width:1200px; margin:0 auto; border-bottom:1px solid var(--border); }
+  .stat { display:flex; flex-direction:column; }
+  .stat-val { font-family:var(--font-head); font-size:1.5rem; font-weight:700; color:var(--accent); }
+  .stat-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+  .section-header { display:flex; align-items:center; justify-content:space-between; padding:2rem 2.5rem 1rem; max-width:1200px; margin:0 auto; }
+  .section-header h2 { font-family:var(--font-head); font-size:1.05rem; font-weight:700; }
+  .course-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:1.1rem; padding:0 2.5rem 3rem; max-width:1200px; margin:0 auto; }
+  .course-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.5rem; cursor:pointer; transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1); position:relative; overflow:hidden; }
+  .course-card:hover { transform:translateY(-4px); border-color:rgba(255,255,255,0.14); box-shadow:0 14px 36px rgba(0,0,0,0.4); }
+  .card-tag { display:inline-block; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; margin-bottom:0.9rem; }
+  .tag-tech    { background:rgba(90,240,212,0.12); color:var(--accent2); }
+  .tag-design  { background:rgba(232,255,90,0.12); color:var(--accent); }
+  .tag-data    { background:rgba(200,150,255,0.12); color:#c89fff; }
+  .tag-business{ background:rgba(255,150,90,0.12); color:#ff965a; }
+  .card-icon { font-size:2rem; margin-bottom:0.7rem; display:block; }
+  .card-title { font-family:var(--font-head); font-size:1.05rem; font-weight:700; letter-spacing:-0.02em; margin-bottom:0.35rem; }
+  .card-desc { font-size:13px; color:var(--muted); font-weight:300; margin-bottom:1.1rem; line-height:1.5; }
+  .card-meta { display:flex; gap:0.8rem; align-items:center; font-size:12px; color:var(--muted); flex-wrap:wrap; }
+  .pill { margin-left:auto; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:600; background:var(--surface2); border:1px solid var(--border); }
+  .progress-bar-wrap { height:3px; background:var(--surface2); border-radius:2px; margin-top:1rem; overflow:hidden; }
+  .progress-bar-fill { height:100%; border-radius:2px; background:var(--accent); }
+
+  /* COURSE INTERIOR */
+  .course-interior { max-width:900px; margin:0 auto; padding:3rem 2.5rem; }
+  .course-header { display:flex; gap:1.4rem; align-items:flex-start; margin-bottom:2rem; padding-bottom:2rem; border-bottom:1px solid var(--border); }
+  .course-header-icon { font-size:2.8rem; background:var(--surface2); border-radius:var(--radius); padding:0.9rem 1.1rem; flex-shrink:0; }
+  .course-header-info h1 { font-family:var(--font-head); font-size:1.9rem; font-weight:800; letter-spacing:-0.04em; margin-bottom:0.35rem; }
+  .course-header-info p { color:var(--muted); font-size:14px; font-weight:300; max-width:480px; }
+  .course-badges { display:flex; gap:7px; margin-top:0.7rem; flex-wrap:wrap; }
+  .badge { padding:4px 11px; border-radius:100px; font-size:12px; font-weight:500; border:1px solid var(--border); color:var(--muted); }
+  .quiz-cta { background:linear-gradient(135deg,#1c2a15,#1a2520); border:1px solid rgba(232,255,90,0.2); border-radius:var(--radius); padding:1.7rem; margin-bottom:1rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+  .quiz-cta-text h3 { font-family:var(--font-head); font-size:1.1rem; font-weight:700; margin-bottom:0.25rem; }
+  .quiz-cta-text p { color:var(--muted); font-size:13px; }
+  .ai-quiz-cta { background:linear-gradient(135deg,#0f1a2e,#0d1f1a); border:1px solid rgba(90,240,212,0.25); border-radius:var(--radius); padding:1.7rem; margin-bottom:2rem; position:relative; overflow:hidden; }
+  .ai-quiz-cta::before { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:radial-gradient(circle,rgba(90,240,212,0.07),transparent 70%); pointer-events:none; }
+  .ai-quiz-cta h3 { font-family:var(--font-head); font-size:1.1rem; font-weight:700; margin-bottom:0.25rem; }
+  .ai-quiz-cta p { color:var(--muted); font-size:13px; margin-bottom:1.1rem; }
+  .ai-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; background:rgba(90,240,212,0.12); color:var(--accent2); border:1px solid rgba(90,240,212,0.2); margin-bottom:0.7rem; }
+  .ai-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--accent2); animation:pulse 1.8s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  .modules-section-title { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; margin-bottom:0.8rem; }
+  .modules-list { display:flex; flex-direction:column; gap:8px; }
+  .module-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:1rem 1.3rem; display:flex; align-items:center; gap:1rem; transition:all 0.2s; cursor:pointer; }
+  .module-item:hover { border-color:rgba(255,255,255,0.15); background:var(--surface2); transform:translateX(4px); }
+  .module-num { width:30px; height:30px; border-radius:7px; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--muted); flex-shrink:0; font-family:var(--font-head); }
+  .module-item.completed .module-num { background:rgba(232,255,90,0.12); color:var(--accent); border-color:rgba(232,255,90,0.2); }
+  .module-info { flex:1; min-width:0; }
+  .module-title { font-weight:500; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .module-sub { font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .module-duration { font-size:12px; color:var(--muted); white-space:nowrap; flex-shrink:0; }
+  .module-check { color:var(--accent); font-size:13px; margin-left:4px; flex-shrink:0; }
+  .module-arrow { color:var(--muted); font-size:14px; flex-shrink:0; transition:transform 0.2s,color 0.2s; }
+  .module-item:hover .module-arrow { transform:translateX(3px); color:var(--accent2); }
+
+  /* LESSON READER */
+  .lesson-layout { display:grid; grid-template-columns:260px 1fr; min-height:calc(100vh - 64px); }
+  .lesson-sidebar { background:var(--surface); border-right:1px solid var(--border); padding:1.5rem 0; position:sticky; top:64px; height:calc(100vh - 64px); overflow-y:auto; }
+  .lesson-sidebar::-webkit-scrollbar { width:4px; }
+  .lesson-sidebar::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
+  .sidebar-course-name { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:0.1em; font-weight:700; padding:0 1.2rem; margin-bottom:1rem; }
+  .sidebar-mod { display:flex; align-items:center; gap:10px; padding:0.75rem 1.2rem; cursor:pointer; transition:background 0.15s; border-left:3px solid transparent; }
+  .sidebar-mod:hover { background:var(--surface2); }
+  .sidebar-mod.active { background:var(--surface2); border-left-color:var(--accent); }
+  .sidebar-mod.active .sidebar-num { color:var(--accent); }
+  .sidebar-mod.active .sidebar-title { color:var(--text); }
+  .sidebar-num { font-size:11px; font-weight:700; color:var(--muted); min-width:22px; font-family:var(--font-head); }
+  .sidebar-title { font-size:13px; color:var(--muted); line-height:1.3; flex:1; }
+  .sidebar-check { font-size:11px; color:var(--accent); }
+  .lesson-main { padding:3rem 3.5rem; max-width:780px; }
+  .lesson-eyebrow { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; font-weight:700; color:var(--accent2); margin-bottom:0.6rem; }
+  .lesson-title { font-family:var(--font-head); font-size:clamp(1.6rem,3vw,2.2rem); font-weight:800; letter-spacing:-0.04em; line-height:1.1; margin-bottom:1rem; }
+  .lesson-meta { display:flex; align-items:center; gap:1rem; margin-bottom:2rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
+  .lesson-meta span { font-size:13px; color:var(--muted); display:flex; align-items:center; gap:5px; }
+  .lesson-body { font-size:15px; font-weight:300; line-height:1.8; color:#d4d4d8; }
+  .lesson-body h2 { font-family:var(--font-head); font-size:1.2rem; font-weight:700; color:var(--text); margin:2rem 0 0.7rem; letter-spacing:-0.02em; }
+  .lesson-body h3 { font-family:var(--font-head); font-size:1rem; font-weight:700; color:var(--accent2); margin:1.5rem 0 0.5rem; }
+  .lesson-body p { margin-bottom:1.1rem; }
+  .lesson-body ul,.lesson-body ol { margin:0.6rem 0 1.1rem 1.4rem; display:flex; flex-direction:column; gap:0.4rem; }
+  .lesson-body li { color:#d4d4d8; }
+  .lesson-body code { font-family:'Courier New',monospace; background:var(--surface2); border:1px solid var(--border); padding:2px 6px; border-radius:4px; font-size:13px; color:var(--accent2); }
+  .lesson-body pre { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:1.2rem 1.4rem; margin:1rem 0 1.4rem; overflow-x:auto; }
+  .lesson-body pre code { background:none; border:none; padding:0; font-size:13.5px; color:#a8d5b5; display:block; line-height:1.7; }
+  .lesson-body .callout { background:rgba(90,240,212,0.05); border-left:3px solid var(--accent2); border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:1rem 1.2rem; margin:1.2rem 0; }
+  .lesson-body .callout strong { color:var(--accent2); }
+  .lesson-body strong { color:var(--text); font-weight:600; }
+  .lesson-nav { display:flex; justify-content:space-between; align-items:center; margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border); gap:1rem; }
+  .lesson-nav-btn { display:flex; flex-direction:column; gap:3px; max-width:220px; cursor:pointer; }
+  .lesson-nav-label { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; }
+  .lesson-nav-title { font-size:13px; font-weight:500; color:var(--text); transition:color 0.2s; }
+  .lesson-nav-btn:hover .lesson-nav-title { color:var(--accent2); }
+
+  /* QUIZ */
+  .quiz-view { max-width:700px; margin:0 auto; padding:2.5rem; }
+  .quiz-topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; }
+  .quiz-progress-label { font-size:13px; color:var(--muted); }
+  .quiz-progress-label strong { color:var(--text); }
+  .timer { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:6px 13px; font-family:var(--font-head); font-size:1rem; font-weight:700; color:var(--accent2); }
+  .quiz-progress-track { height:4px; background:var(--surface2); border-radius:2px; margin-bottom:2rem; overflow:hidden; }
+  .quiz-progress-fill { height:100%; border-radius:2px; background:linear-gradient(90deg,var(--accent2),var(--accent)); transition:width 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+  .question-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:1.8rem 2rem; margin-bottom:1.3rem; }
+  .question-num { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent2); font-weight:600; margin-bottom:0.7rem; }
+  .question-text { font-family:var(--font-head); font-size:1.2rem; font-weight:700; letter-spacing:-0.02em; line-height:1.3; }
+  .options-grid { display:flex; flex-direction:column; gap:9px; margin-bottom:1.8rem; }
+  .option { display:flex; align-items:center; gap:13px; padding:0.9rem 1.2rem; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; transition:all 0.17s; user-select:none; }
+  .option:hover:not(.selected) { border-color:rgba(255,255,255,0.16); background:var(--surface2); }
+  .option.selected { border-color:var(--accent2); background:rgba(90,240,212,0.06); }
+  .option-indicator { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; font-weight:700; color:var(--muted); transition:all 0.17s; font-family:var(--font-head); }
+  .option.selected .option-indicator { border-color:var(--accent2); background:var(--accent2); color:#0a0b0f; }
+  .option-text { font-size:14px; }
+  .quiz-nav { display:flex; justify-content:flex-end; gap:10px; }
+  .ai-mode-badge { display:inline-flex; align-items:center; gap:5px; padding:2px 9px; border-radius:100px; font-size:11px; font-weight:600; background:rgba(90,240,212,0.1); color:var(--accent2); border:1px solid rgba(90,240,212,0.18); }
+
+  /* RESULTS */
+  .results-view { max-width:780px; margin:0 auto; padding:3rem 2.5rem; }
+  .results-hero { text-align:center; padding:2.2rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1.8rem; position:relative; overflow:hidden; }
+  .results-hero::before { content:''; position:absolute; top:-60px; left:50%; transform:translateX(-50%); width:280px; height:280px; background:radial-gradient(circle,rgba(232,255,90,0.07),transparent 70%); pointer-events:none; }
+  .score-ring { width:116px; height:116px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-direction:column; margin:0 auto 1rem; position:relative; font-family:var(--font-head); }
+  .score-ring svg { position:absolute; inset:-4px; width:calc(100% + 8px); height:calc(100% + 8px); transform:rotate(-90deg); }
+  .score-ring circle { fill:none; stroke-width:4; }
+  .score-ring .track { stroke:var(--surface2); }
+  .score-ring .fill { stroke:var(--accent); stroke-linecap:round; transition:stroke-dashoffset 1.2s cubic-bezier(0.34,1.2,0.64,1); }
+  .score-num { font-size:1.9rem; font-weight:800; line-height:1; color:var(--accent); }
+  .score-denom { font-size:12px; color:var(--muted); }
+  .results-hero h2 { font-family:var(--font-head); font-size:1.7rem; font-weight:800; letter-spacing:-0.03em; margin-bottom:0.3rem; }
+  .results-hero p { color:var(--muted); font-size:14px; font-weight:300; }
+  .score-stats { display:flex; justify-content:center; gap:2rem; margin-top:1.4rem; padding-top:1.4rem; border-top:1px solid var(--border); }
+  .score-stat { text-align:center; }
+  .score-stat-val { font-family:var(--font-head); font-size:1.25rem; font-weight:700; }
+  .score-stat-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+  .correct-val { color:var(--accent2); } .wrong-val { color:var(--accent3); }
+  .review-section h3 { font-family:var(--font-head); font-size:1.05rem; font-weight:700; margin-bottom:1rem; padding-bottom:0.7rem; border-bottom:1px solid var(--border); }
+  .review-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:0.9rem; overflow:hidden; }
+  .review-item-header { padding:1.1rem 1.4rem; display:flex; align-items:flex-start; gap:11px; }
+  .review-status-dot { width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .dot-correct { background:var(--accent2); box-shadow:0 0 8px rgba(90,240,212,0.4); }
+  .dot-wrong { background:var(--accent3); box-shadow:0 0 8px rgba(255,107,107,0.4); }
+  .review-q-text { font-weight:500; font-size:14px; line-height:1.4; }
+  .review-answers { padding:0 1.4rem 0.9rem 2.4rem; display:flex; flex-direction:column; gap:5px; }
+  .answer-row { display:flex; gap:10px; align-items:baseline; font-size:13px; }
+  .answer-label { font-size:11px; text-transform:uppercase; letter-spacing:0.07em; font-weight:600; min-width:70px; flex-shrink:0; }
+  .label-user { color:var(--muted); } .label-correct { color:var(--accent2); }
+  .val-wrong { color:var(--accent3); text-decoration:line-through; }
+  .val-correct { color:var(--accent2); }
+  .val-skipped { color:var(--muted); font-style:italic; }
+  .explanation-box { margin:0 1.4rem 1.1rem; background:rgba(90,240,212,0.04); border:1px solid rgba(90,240,212,0.12); border-radius:var(--radius-sm); padding:0.9rem 1.1rem; }
+  .explanation-label { font-size:11px; text-transform:uppercase; letter-spacing:0.1em; font-weight:700; color:var(--accent2); margin-bottom:0.35rem; }
+  .explanation-text { font-size:13px; color:var(--muted); line-height:1.6; font-weight:300; }
+  .results-actions { display:flex; gap:10px; justify-content:center; margin-top:1.8rem; flex-wrap:wrap; }
+
+  /* AI MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.72); backdrop-filter:blur(6px); align-items:center; justify-content:center; padding:1.5rem; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid rgba(90,240,212,0.2); border-radius:var(--radius); width:100%; max-width:510px; padding:2rem; animation:modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1); position:relative; max-height:90vh; overflow-y:auto; }
+  @keyframes modalIn { from{opacity:0;transform:scale(0.92) translateY(14px)} to{opacity:1;transform:scale(1) translateY(0)} }
+  .modal-close { position:absolute; top:1rem; right:1rem; background:var(--surface2); border:1px solid var(--border); color:var(--muted); width:30px; height:30px; border-radius:7px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:13px; transition:all 0.2s; }
+  .modal-close:hover { color:var(--text); border-color:rgba(255,255,255,0.18); }
+  .modal-title { font-family:var(--font-head); font-size:1.25rem; font-weight:800; letter-spacing:-0.03em; margin-bottom:0.25rem; }
+  .modal-subtitle { color:var(--muted); font-size:13px; margin-bottom:1.4rem; font-weight:300; }
+  .form-group { margin-bottom:1rem; }
+  .form-label { display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-bottom:5px; }
+  .form-input,.form-textarea,.form-select { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 13px; color:var(--text); font-family:var(--font-body); font-size:14px; outline:none; transition:border-color 0.2s; resize:none; }
+  .form-input:focus,.form-textarea:focus,.form-select:focus { border-color:var(--accent2); box-shadow:0 0 0 3px rgba(90,240,212,0.08); }
+  .form-textarea { min-height:76px; line-height:1.5; }
+  .form-select option { background:var(--surface2); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .generate-btn { width:100%; padding:12px; margin-top:0.5rem; font-size:14px; font-weight:600; border-radius:var(--radius-sm); cursor:pointer; border:none; background:linear-gradient(135deg,var(--accent2),#3dd6b5); color:#0a0b0f; font-family:var(--font-body); transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .generate-btn:hover:not(:disabled) { filter:brightness(1.08); transform:translateY(-1px); }
+  .generate-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .ai-loading { display:none; flex-direction:column; align-items:center; padding:1.5rem 0 0.5rem; text-align:center; }
+  .ai-loading.show { display:flex; }
+  .spinner { width:42px; height:42px; border:3px solid var(--surface2); border-top-color:var(--accent2); border-radius:50%; animation:spin 0.9s linear infinite; margin-bottom:0.9rem; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .loading-label { font-family:var(--font-head); font-size:1rem; font-weight:700; margin-bottom:0.25rem; }
+  .loading-sub { color:var(--muted); font-size:13px; }
+  .loading-steps { display:flex; flex-direction:column; gap:6px; margin-top:1rem; width:100%; }
+  .loading-step { display:flex; align-items:center; gap:9px; font-size:13px; color:var(--muted); padding:7px 11px; border-radius:var(--radius-sm); background:var(--surface2); transition:all 0.3s; border:1px solid transparent; }
+  .loading-step.active { color:var(--text); border-color:rgba(90,240,212,0.15); }
+  .loading-step.done { color:var(--accent2); }
+  .step-icon { font-size:14px; width:18px; text-align:center; }
+
+  @media (max-width:700px) {
+    nav { padding:0 1.2rem; }
+    .dashboard-hero,.stats-bar,.section-header,.course-grid { padding-left:1.2rem; padding-right:1.2rem; }
+    .course-interior,.quiz-view,.results-view { padding:1.4rem 1.2rem; }
+    .lesson-layout { grid-template-columns:1fr; }
+    .lesson-sidebar { position:relative; top:0; height:auto; max-height:200px; border-right:none; border-bottom:1px solid var(--border); }
+    .lesson-main { padding:1.5rem 1.2rem; }
+    .quiz-cta { flex-direction:column; align-items:flex-start; }
+    .form-row { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo" onclick="goTo('dashboard')">Learn<span>Flow</span></div>
+  <div class="nav-breadcrumb" id="breadcrumb"><span class="crumb active">Dashboard</span></div>
+</nav>
+
+<!-- L1 DASHBOARD -->
+<div id="view-dashboard" class="view active">
+  <div class="dashboard-hero">
+    <h1>Learn something <em>remarkable</em><br>today.</h1>
+    <p>Expert-curated courses with hands-on lessons, quizzes, and instant AI feedback.</p>
+  </div>
+  <div class="stats-bar">
+    <div class="stat"><span class="stat-val">6</span><span class="stat-label">Courses</span></div>
+    <div class="stat"><span class="stat-val">22</span><span class="stat-label">Lessons</span></div>
+    <div class="stat"><span class="stat-val">48k</span><span class="stat-label">Learners</span></div>
+  </div>
+  <div class="section-header"><h2>All Courses</h2></div>
+  <div class="course-grid" id="courseGrid"></div>
+</div>
+
+<!-- L2 COURSE INTERIOR -->
+<div id="view-course" class="view">
+  <div class="course-interior">
+    <div class="course-header">
+      <div class="course-header-icon" id="courseIcon">🐍</div>
+      <div class="course-header-info">
+        <h1 id="courseTitle">Course</h1>
+        <p id="courseDesc"></p>
+        <div class="course-badges" id="courseBadges"></div>
+      </div>
+    </div>
+    <div class="quiz-cta">
+      <div class="quiz-cta-text">
+        <h3>📝 Ready to test your knowledge?</h3>
+        <p>Take the preset course quiz — 5 questions with detailed explanations.</p>
+      </div>
+      <button class="btn btn-primary" onclick="startQuiz()">Start Quiz →</button>
+    </div>
+    <div class="ai-quiz-cta">
+      <div class="ai-badge"><span class="dot"></span>AI Powered</div>
+      <h3>✨ Generate a Custom AI Quiz</h3>
+      <p>Type any topic and Claude will create unique questions tailored to your level.</p>
+      <button class="btn btn-ai" onclick="openAIModal()">Generate AI Quiz →</button>
+    </div>
+    <div class="modules-section-title">Course Modules — click any lesson to read</div>
+    <div class="modules-list" id="modulesList"></div>
+  </div>
+</div>
+
+<!-- L2.5 LESSON READER -->
+<div id="view-lesson" class="view">
+  <div class="lesson-layout">
+    <aside class="lesson-sidebar" id="lessonSidebar"></aside>
+    <main class="lesson-main">
+      <div class="lesson-eyebrow" id="lessonEyebrow"></div>
+      <h1 class="lesson-title" id="lessonTitle"></h1>
+      <div class="lesson-meta" id="lessonMeta"></div>
+      <div class="lesson-body" id="lessonBody"></div>
+      <div class="lesson-nav" id="lessonNavBar"></div>
+    </main>
+  </div>
+</div>
+
+<!-- L3 QUIZ -->
+<div id="view-quiz" class="view">
+  <div class="quiz-view">
+    <div class="quiz-topbar">
+      <div class="quiz-progress-label">Question <strong id="qNumDisplay">1</strong> of <strong id="qTotalDisplay">5</strong></div>
+      <div class="timer" id="timerDisplay">02:00</div>
+    </div>
+    <div class="quiz-progress-track"><div class="quiz-progress-fill" id="quizProgressFill" style="width:20%"></div></div>
+    <div class="question-card">
+      <div class="question-num" id="qLabel">Question 1</div>
+      <div class="question-text" id="qText">Loading...</div>
+    </div>
+    <div class="options-grid" id="optionsGrid"></div>
+    <div class="quiz-nav">
+      <button class="btn btn-ghost" onclick="nextQuestion(false)">Skip</button>
+      <button class="btn btn-teal" id="nextBtn" onclick="nextQuestion(true)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- L4 RESULTS -->
+<div id="view-results" class="view">
+  <div class="results-view">
+    <div class="results-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 128 128">
+          <circle class="track" cx="64" cy="64" r="58"/>
+          <circle class="fill" id="scoreArc" cx="64" cy="64" r="58" stroke-dasharray="364.4" stroke-dashoffset="364.4"/>
+        </svg>
+        <span class="score-num" id="scoreNum">0</span>
+        <span class="score-denom" id="scoreDenom">/ 5</span>
+      </div>
+      <h2 id="resultHeading">Great work!</h2>
+      <p id="resultSubtitle"></p>
+      <div class="score-stats">
+        <div class="score-stat"><div class="score-stat-val correct-val" id="correctCount">0</div><div class="score-stat-label">Correct</div></div>
+        <div class="score-stat"><div class="score-stat-val wrong-val" id="wrongCount">0</div><div class="score-stat-label">Wrong</div></div>
+        <div class="score-stat"><div class="score-stat-val" id="pctDisplay" style="color:var(--accent)">0%</div><div class="score-stat-label">Score</div></div>
+      </div>
+    </div>
+    <div class="review-section">
+      <h3>Question Review</h3>
+      <div id="reviewList"></div>
+    </div>
+    <div class="results-actions">
+      <button class="btn btn-ghost" onclick="goTo('course')">← Back to Course</button>
+      <button class="btn btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
+      <button class="btn btn-ghost" onclick="goTo('dashboard')">Dashboard</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI MODAL -->
+<div class="modal-overlay" id="aiModal" onclick="handleModalClick(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeAIModal()">&#x2715;</button>
+    <div id="modalForm">
+      <div class="ai-badge" style="margin-bottom:0.9rem"><span class="dot"></span>AI Quiz Generator</div>
+      <div class="modal-title">Create Your Quiz</div>
+      <div class="modal-subtitle">Claude will generate fresh questions with explanations — never the same quiz twice.</div>
+      <div class="form-group">
+        <label class="form-label">Topic / Subject</label>
+        <input class="form-input" id="aiTopic" type="text" placeholder="e.g. React hooks, Black holes, World War II…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Extra context (optional)</label>
+        <textarea class="form-textarea" id="aiContext" placeholder="Any specific subtopics or scope…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Questions</label>
+          <select class="form-select" id="aiCount">
+            <option value="3">3 questions</option>
+            <option value="5" selected>5 questions</option>
+            <option value="8">8 questions</option>
+            <option value="10">10 questions</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Difficulty</label>
+          <select class="form-select" id="aiDifficulty">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate" selected>Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <button class="generate-btn" id="generateBtn" onclick="generateAIQuiz()"><span>&#x2728;</span> Generate Quiz</button>
+    </div>
+    <div class="ai-loading" id="aiLoading">
+      <div class="spinner"></div>
+      <div class="loading-label">Claude is thinking…</div>
+      <div class="loading-sub">Crafting personalised questions for you</div>
+      <div class="loading-steps">
+        <div class="loading-step" id="step1"><span class="step-icon">&#x1F9E0;</span> Analysing topic &amp; difficulty</div>
+        <div class="loading-step" id="step2"><span class="step-icon">&#x2753;</span> Writing questions</div>
+        <div class="loading-step" id="step3"><span class="step-icon">&#x1F50D;</span> Adding detailed explanations</div>
+        <div class="loading-step" id="step4"><span class="step-icon">&#x2705;</span> Validating answers</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── COURSE DATA ─────────────────────────────────────────────────── */
+var COURSES = {
+  python: {
+    title:'Python Fundamentals', icon:'🐍', tag:'Tech', tagClass:'tag-tech',
+    desc:'Variables, loops, functions, and OOP — everything you need to build real programs.',
+    hours:'4h', level:'Beginner', progress:65,
+    modules:[
+      { title:'Introduction to Python', sub:'Installation, REPL, and your first script', duration:'45 min', completed:true,
+        content:'<h2>Welcome to Python</h2><p>Python is one of the world\'s most popular programming languages. It reads almost like plain English, runs everywhere, and powers everything from web apps to machine learning models.</p><h3>Installing Python</h3><p>Download the latest version from <strong>python.org</strong>. On Windows, tick <code>Add Python to PATH</code> during installation.</p><pre><code>python --version\n# Python 3.12.0</code></pre><h3>The REPL</h3><p>Type <code>python</code> in your terminal to launch the interactive shell. It runs each line immediately — perfect for experimenting.</p><pre><code>>>> 2 + 2\n4\n>>> print("Hello, world!")\nHello, world!</code></pre><h3>Your First Script</h3><p>Create <code>hello.py</code> and write:</p><pre><code>name = input("What is your name? ")\nprint(f"Hello, {name}! Welcome to Python.")</code></pre><p>Run it with <code>python hello.py</code>.</p><div class="callout"><strong>💡 Pro tip:</strong> Use VS Code with the Python extension for syntax highlighting and integrated terminal.</div><h2>Key Takeaways</h2><ul><li>Python is interpreted — no compile step</li><li>The REPL lets you test ideas instantly</li><li>f-strings (<code>f"Hello {name}"</code>) are the modern way to embed variables</li></ul>'
+      },
+      { title:'Variables & Data Types', sub:'Integers, strings, lists, dicts, and more', duration:'60 min', completed:true,
+        content:'<h2>Variables in Python</h2><p>A variable is a named container for a value. In Python you don\'t declare types — just assign:</p><pre><code>age = 25\nprice = 9.99\nname = "Alice"\nactive = True</code></pre><h3>Core Types</h3><ul><li><strong>int</strong> — whole numbers: <code>42</code></li><li><strong>float</strong> — decimals: <code>3.14</code></li><li><strong>str</strong> — text: <code>"hello"</code></li><li><strong>bool</strong> — <code>True</code> or <code>False</code></li><li><strong>NoneType</strong> — absence of value: <code>None</code></li></ul><h3>Collections</h3><pre><code>fruits = ["apple", "banana"]   # list\npoint = (10, 20)               # tuple\nperson = {"name":"Bob"}        # dict\ntags = {"python", "code"}      # set</code></pre><div class="callout"><strong>💡 Dynamic typing:</strong> Python variables can hold any type and can be reassigned to a different type at any time.</div>'
+      },
+      { title:'Control Flow', sub:'if/else, loops, and comprehensions', duration:'50 min', completed:false,
+        content:'<h2>Making Decisions</h2><pre><code>score = 78\nif score >= 90:\n    print("A")\nelif score >= 80:\n    print("B")\nelse:\n    print("Below B")</code></pre><h3>Loops</h3><pre><code>for fruit in ["apple","banana"]:\n    print(fruit)\n\nfor i in range(5):  # 0..4\n    print(i)\n\ncount = 0\nwhile count < 3:\n    print(count)\n    count += 1</code></pre><h3>List Comprehensions</h3><pre><code>squares = [x**2 for x in range(6)]\n# [0, 1, 4, 9, 16, 25]\n\nevens = [x for x in range(20) if x % 2 == 0]</code></pre><div class="callout"><strong>💡 Tip:</strong> Use <code>break</code> to exit a loop early and <code>continue</code> to skip the current iteration.</div>'
+      },
+      { title:'Functions & Scope', sub:'Defining, calling, *args, **kwargs', duration:'55 min', completed:false,
+        content:'<h2>Defining Functions</h2><pre><code>def greet(name):\n    return f"Hello, {name}!"\n\nprint(greet("Alice"))  # Hello, Alice!</code></pre><h3>Default Arguments</h3><pre><code>def power(base, exponent=2):\n    return base ** exponent\n\nprint(power(3))    # 9\nprint(power(3, 3)) # 27</code></pre><h3>*args and **kwargs</h3><pre><code>def total(*numbers):\n    return sum(numbers)\n\nprint(total(1, 2, 3, 4))  # 10\n\ndef display(**info):\n    for key, value in info.items():\n        print(f"{key}: {value}")</code></pre><h3>Scope</h3><pre><code>x = "global"\n\ndef show():\n    x = "local"\n    print(x)  # local\n\nshow()\nprint(x)  # global</code></pre><div class="callout"><strong>💡 Best practice:</strong> Functions should do one thing well. Keep them short and name them as verbs.</div>'
+      },
+      { title:'Object-Oriented Python', sub:'Classes, inheritance, and dunder methods', duration:'70 min', completed:false,
+        content:'<h2>Classes and Objects</h2><pre><code>class Dog:\n    def __init__(self, name, age):\n        self.name = name\n        self.age = age\n\n    def bark(self):\n        return f"{self.name} says: Woof!"\n\nrex = Dog("Rex", 4)\nprint(rex.bark())</code></pre><h3>Inheritance</h3><pre><code>class Animal:\n    def __init__(self, name):\n        self.name = name\n\nclass Cat(Animal):\n    def speak(self):\n        return f"{self.name}: Meow!"</code></pre><h3>Dunder Methods</h3><pre><code>class Vector:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\n    def __repr__(self):\n        return f"Vector({self.x}, {self.y})"\n\n    def __add__(self, other):\n        return Vector(self.x+other.x, self.y+other.y)\n\nv1 = Vector(1,2)\nv2 = Vector(3,4)\nprint(v1 + v2)  # Vector(4, 6)</code></pre><div class="callout"><strong>💡 Key dunders:</strong> <code>__init__</code>, <code>__str__</code>, <code>__repr__</code>, <code>__len__</code>, <code>__eq__</code>.</div>'
+      }
+    ],
+    quiz:[
+      {q:'What is the output of `print(type(3.14))`?',options:["<class 'int'>","<class 'float'>","<class 'str'>","<class 'decimal'>"],answer:1,explanation:"3.14 is a float literal. Python automatically types it as float."},
+      {q:'Which keyword defines a function in Python?',options:['function','fun','def','lambda'],answer:2,explanation:'Python uses `def` for named functions. `lambda` creates anonymous functions; the others are not Python keywords.'},
+      {q:'What does `[x**2 for x in range(4)]` produce?',options:['[0,1,2,3]','[1,4,9,16]','[0,1,4,9]','[0,2,4,6]'],answer:2,explanation:'range(4) gives 0,1,2,3. Squaring each: 0,1,4,9. This is a list comprehension.'},
+      {q:'How do you inherit from class Animal in Python?',options:['class Dog extends Animal:','class Dog(Animal):','class Dog : Animal:','class Dog -> Animal:'],answer:1,explanation:'Python uses parentheses in the class signature to specify the parent: `class Dog(Animal):`.'},
+      {q:'What does __init__ do?',options:['Deletes the object','Converts to string','Initialises instance attributes','Defines a static method'],answer:2,explanation:'__init__ is the constructor. It runs on instantiation and sets up initial instance state.'}
+    ]
+  },
+  js: {
+    title:'JavaScript & DOM', icon:'⚡', tag:'Tech', tagClass:'tag-tech',
+    desc:'From ES6+ syntax to async/await and real browser manipulation.',
+    hours:'5h', level:'Intermediate', progress:20,
+    modules:[
+      { title:'ES6+ Essentials', sub:'let/const, arrow functions, destructuring', duration:'55 min', completed:true,
+        content:'<h2>Modern JS Syntax</h2><pre><code>let count = 0;\nconst PI = 3.14159;\n\nconst add = (a, b) => a + b;\nconst double = n => n * 2;</code></pre><h3>Destructuring</h3><pre><code>const [first, ...rest] = [1,2,3,4];\nconst { name, age } = person;\n</code></pre><h3>Spread & Template Literals</h3><pre><code>const msg = `Hello ${name}!`;\nconst arr2 = [...arr1, 4, 5];\nconst obj2 = { ...obj1, b: 2 };</code></pre><div class="callout"><strong>💡 Rule:</strong> Always use <code>const</code> by default; only <code>let</code> when you need to reassign. Never use <code>var</code>.</div>'
+      },
+      { title:'DOM Manipulation', sub:'Selecting, modifying, creating elements', duration:'60 min', completed:false,
+        content:'<h2>The Document Object Model</h2><pre><code>const btn = document.querySelector("#submit");\nconst cards = document.querySelectorAll(".card");</code></pre><h3>Modifying</h3><pre><code>el.textContent = "Safe text";\nel.classList.add("active");\nel.classList.toggle("open");\nel.setAttribute("aria-label","Close");</code></pre><h3>Creating</h3><pre><code>const li = document.createElement("li");\nli.textContent = "New item";\ndocument.querySelector("ul").appendChild(li);</code></pre><div class="callout"><strong>💡 Performance:</strong> Build elements in memory first, then append once — not inside a loop.</div>'
+      },
+      { title:'Events & Listeners', sub:'Click, input, keyboard, bubbling', duration:'50 min', completed:false,
+        content:'<h2>Handling Interactions</h2><pre><code>btn.addEventListener("click", (e) => {\n  console.log("Clicked!", e.target);\n});</code></pre><h3>Event Delegation</h3><pre><code>document.querySelector("#list").addEventListener("click", (e) => {\n  if (e.target.matches("li")) {\n    console.log("Item:", e.target.textContent);\n  }\n});</code></pre><div class="callout"><strong>💡 Event delegation</strong> — attach one listener to a parent and handle all children efficiently.</div>'
+      },
+      { title:'Async JavaScript', sub:'Promises, fetch, and async/await', duration:'65 min', completed:false,
+        content:'<h2>Why Async Matters</h2><p>JavaScript is single-threaded. Async lets you wait for slow operations without blocking the page.</p><h3>async / await</h3><pre><code>async function getUser(id) {\n  try {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) throw new Error(`HTTP ${res.status}`);\n    return await res.json();\n  } catch (err) {\n    console.error("Error:", err);\n  }\n}</code></pre><div class="callout"><strong>💡 Always wrap await in try/catch.</strong> Unhandled rejections crash silently.</div>'
+      }
+    ],
+    quiz:[
+      {q:'What is the key difference between let and const?',options:['No difference','let is function-scoped, const is block-scoped','Both block-scoped; const binding cannot be reassigned','const values are deeply frozen'],answer:2,explanation:'Both are block-scoped. const prevents reassignment of the binding, but objects it points to can still be mutated.'},
+      {q:'Which method selects the FIRST matching element?',options:['getElementById','querySelectorAll','querySelector','getElementsByClassName'],answer:2,explanation:'querySelector returns the first element matching any CSS selector. querySelectorAll returns all matches as a NodeList.'},
+      {q:'What does event.preventDefault() do?',options:['Stops bubbling','Removes the listener','Cancels the default browser action','Clones the event'],answer:2,explanation:"It prevents the browser's default behaviour — e.g. stopping a form submitting or a link navigating."},
+      {q:'What does async before a function do?',options:['Runs it in a Worker','Makes it always return a Promise','Prevents errors','Runs it immediately'],answer:1,explanation:'An async function always returns a Promise. Inside it you can use await to pause until another Promise resolves.'},
+      {q:'Which is correct arrow function syntax?',options:['function => (x) { x*2 }','(x) => { return x*2; }','arrow(x) => x*2','(x) -> x*2'],answer:1,explanation:'Arrow functions use =>. Block bodies need explicit return; single-expression bodies can omit braces and return.'}
+    ]
+  },
+  design: {
+    title:'UI/UX Design Systems', icon:'🎨', tag:'Design', tagClass:'tag-design',
+    desc:'Color theory, spacing, components, and accessible design patterns.',
+    hours:'4h', level:'Beginner', progress:0,
+    modules:[
+      { title:'Colour Theory & Palettes', sub:'Hue, contrast, and accessible colour', duration:'50 min', completed:false,
+        content:'<h2>Why Colour Matters</h2><p>Colour conveys meaning, guides attention, and affects emotion — but only when used intentionally.</p><h3>Colour Relationships</h3><ul><li><strong>Complementary</strong> — opposite on wheel (high contrast)</li><li><strong>Analogous</strong> — adjacent (harmonious)</li><li><strong>Triadic</strong> — three equally spaced (vibrant)</li></ul><h3>UI Palette Structure</h3><ul><li><strong>Brand/Accent</strong> — 1–2 distinctive colours</li><li><strong>Neutrals</strong> — greys for backgrounds and text</li><li><strong>Semantic</strong> — green (success), red (error), yellow (warning)</li></ul><h3>WCAG Contrast</h3><ul><li><strong>AA:</strong> 4.5:1 for normal text</li><li><strong>AAA:</strong> 7:1 for normal text</li></ul><div class="callout"><strong>💡 Tool:</strong> Use coolors.co for palette generation and the WebAIM Contrast Checker for accessibility validation.</div>'
+      },
+      { title:'Spacing & Typography', sub:'Scale, hierarchy, and readability', duration:'55 min', completed:false,
+        content:'<h2>The 8-Point Grid</h2><p>All spacing is multiples of 8px (8, 16, 24, 32, 48, 64…). This creates visual consistency across all screen sizes.</p><pre><code>--space-2: 8px;\n--space-3: 16px;\n--space-4: 24px;\n--space-5: 32px;</code></pre><h3>Type Scale (1.25× ratio)</h3><ul><li>xs: 12px — captions, labels</li><li>sm: 14px — secondary text</li><li>base: 16px — body copy</li><li>xl: 24px — subheadings</li><li>2xl: 32px — section headings</li><li>3xl: 48px — hero titles</li></ul><h3>Readability Rules</h3><ul><li>Line length: 60–80 characters</li><li>Line height: 1.5–1.7 for body</li><li>Letter spacing: tighten large headings (−0.02em), loosen labels (+0.08em)</li></ul><div class="callout"><strong>💡 Hierarchy tip:</strong> Vary size, weight, AND colour — not just size alone.</div>'
+      },
+      { title:'Component Design', sub:'Buttons, forms, cards, and states', duration:'60 min', completed:false,
+        content:'<h2>Reusable Components</h2><p>Good components are self-contained, predictable, and cover all states — not just the happy path.</p><h3>Button Variants</h3><ul><li><strong>Primary</strong> — main CTA, one per screen</li><li><strong>Secondary/Ghost</strong> — alternative actions</li><li><strong>Destructive</strong> — delete/remove actions (red)</li><li><strong>Disabled</strong> — visually muted, cursor: not-allowed</li></ul><h3>Every Component Needs These States</h3><ul><li>Default, Hover, Focus, Active, Disabled, Loading, Error</li></ul><h3>Form Best Practices</h3><ul><li>Labels above inputs (not inside placeholders)</li><li>Error messages below the field in red with an icon</li><li>Group related fields together</li></ul><div class="callout"><strong>💡 Never remove focus outlines</strong> — they are essential for keyboard navigation accessibility.</div>'
+      }
+    ],
+    quiz:[
+      {q:'What contrast ratio does WCAG AA require for normal body text?',options:['3:1','4.5:1','7:1','2:1'],answer:1,explanation:'WCAG 2.1 AA requires minimum 4.5:1 contrast ratio for normal text (under 18pt regular or 14pt bold).'},
+      {q:'What is the recommended line length for readable body text?',options:['30–40 chars','60–80 chars','100–120 chars','Any length'],answer:1,explanation:'60–80 characters per line is the sweet spot. Shorter causes too many breaks; longer makes tracking hard.'},
+      {q:'In the 8-point grid, which value is NOT standard?',options:['8px','16px','20px','32px'],answer:2,explanation:'20px is not a multiple of 8. Standard values are 8, 16, 24, 32, 40, 48…'},
+      {q:'Which button should appear only once per screen?',options:['Secondary','Ghost','Primary','Destructive'],answer:2,explanation:'Primary buttons signal the single most important action. Multiple primaries dilute focus.'},
+      {q:'Where should form error messages be placed?',options:['Above the label','In a placeholder','Below the field in red','In a modal'],answer:2,explanation:'Error messages belong directly below the relevant field so users can immediately see what to fix.'}
+    ]
+  },
+  sql: {
+    title:'SQL Mastery', icon:'🗄️', tag:'Data', tagClass:'tag-data',
+    desc:'JOINs, subqueries, window functions, and database design at scale.',
+    hours:'5.5h', level:'Intermediate', progress:100,
+    modules:[
+      { title:'SELECT & Filtering', sub:'WHERE, ORDER BY, LIMIT, LIKE', duration:'45 min', completed:true,
+        content:'<h2>Querying Data</h2><pre><code>SELECT first_name, last_name, email\nFROM users\nWHERE active = true\n  AND age >= 18\nORDER BY last_name ASC\nLIMIT 50;</code></pre><h3>Filtering with WHERE</h3><pre><code>WHERE salary > 50000\nWHERE email LIKE \'%@gmail.com\'\nWHERE country IN (\'US\', \'UK\')\nWHERE phone IS NULL</code></pre><h3>Aggregates</h3><pre><code>SELECT department,\n  COUNT(*) AS count,\n  AVG(salary) AS avg_sal\nFROM employees\nGROUP BY department\nHAVING AVG(salary) > 60000\nORDER BY avg_sal DESC;</code></pre><div class="callout"><strong>💡 HAVING vs WHERE:</strong> WHERE filters rows before grouping; HAVING filters groups after aggregation.</div>'
+      },
+      { title:'JOINs Explained', sub:'INNER, LEFT, RIGHT, FULL OUTER', duration:'60 min', completed:true,
+        content:'<h2>Combining Tables</h2><pre><code>-- INNER: only matching rows\nSELECT o.id, u.email\nFROM orders o\nINNER JOIN users u ON o.user_id = u.id;\n\n-- LEFT: all left rows, NULLs for unmatched right\nSELECT u.email, COUNT(o.id)\nFROM users u\nLEFT JOIN orders o ON o.user_id = u.id\nGROUP BY u.email;</code></pre><h3>Multi-Table</h3><pre><code>SELECT u.name, p.name AS product\nFROM orders o\nJOIN users u    ON u.id = o.user_id\nJOIN products p ON p.id = o.product_id\nWHERE o.status = \'shipped\';</code></pre><div class="callout"><strong>💡 Always alias tables</strong> when joining multiple — it makes complex queries far easier to read.</div>'
+      },
+      { title:'Subqueries & CTEs', sub:'Nested queries and WITH clauses', duration:'55 min', completed:true,
+        content:'<h2>Subqueries</h2><pre><code>-- IN subquery\nSELECT * FROM orders\nWHERE user_id IN (\n  SELECT id FROM users WHERE country = \'US\'\n);</code></pre><h3>CTEs with WITH</h3><pre><code>WITH high_value AS (\n  SELECT user_id, SUM(total) AS ltv\n  FROM orders\n  GROUP BY user_id\n  HAVING SUM(total) > 1000\n)\nSELECT u.email, h.ltv\nFROM users u\nJOIN high_value h ON h.user_id = u.id\nORDER BY h.ltv DESC;</code></pre><div class="callout"><strong>💡 CTEs vs subqueries:</strong> CTEs are named and reusable within the query — much more readable for complex logic.</div>'
+      },
+      { title:'Window Functions', sub:'RANK, ROW_NUMBER, LAG, running totals', duration:'65 min', completed:true,
+        content:'<h2>Window Functions</h2><p>Calculate across related rows without collapsing them into groups.</p><pre><code>SELECT name, department, salary,\n  RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank,\n  AVG(salary) OVER (PARTITION BY department) AS dept_avg\nFROM employees;</code></pre><h3>Running Totals</h3><pre><code>SELECT date, revenue,\n  SUM(revenue) OVER (ORDER BY date\n    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW\n  ) AS running_total\nFROM daily_sales;</code></pre><h3>LAG & LEAD</h3><pre><code>SELECT month, revenue,\n  LAG(revenue,1) OVER (ORDER BY month) AS prev_month,\n  revenue - LAG(revenue,1) OVER (ORDER BY month) AS change\nFROM monthly_revenue;</code></pre><div class="callout"><strong>💡 Syntax:</strong> <code>FUNC() OVER (PARTITION BY col ORDER BY col ROWS...)</code> — all inner clauses optional.</div>'
+      }
+    ],
+    quiz:[
+      {q:'Which JOIN returns only rows with matches in BOTH tables?',options:['LEFT JOIN','RIGHT JOIN','INNER JOIN','FULL OUTER JOIN'],answer:2,explanation:'INNER JOIN is the most restrictive — only rows where the join condition matches in both tables.'},
+      {q:'What is the correct way to check for NULL in SQL?',options:['WHERE x = NULL','WHERE x == NULL','WHERE x IS NULL','WHERE x NULL'],answer:2,explanation:'NULL comparisons require IS NULL. Using = NULL always returns false because NULL equals nothing.'},
+      {q:'Which clause filters AFTER aggregation?',options:['WHERE','HAVING','FILTER','GROUP'],answer:1,explanation:'HAVING filters groups after GROUP BY. WHERE filters individual rows before grouping.'},
+      {q:'What does a CTE (WITH clause) provide?',options:['A permanent table','A named temporary result set','An index','A transaction wrapper'],answer:1,explanation:'CTEs create named, readable, reusable intermediate results within a single query.'},
+      {q:'Which window function assigns sequential integers with NO gaps?',options:['RANK()','DENSE_RANK()','ROW_NUMBER()','NTILE()'],answer:2,explanation:'ROW_NUMBER() gives every row a unique sequential number. RANK() skips after ties; DENSE_RANK() does not skip.'}
+    ]
+  },
+  ai: {
+    title:'AI Zero to Hero', icon:'🤖', tag:'AI/ML', tagClass:'tag-data',
+    desc:'Classical ML through transformers, GenAI, and production deployment.',
+    hours:'8h', level:'Advanced', progress:40,
+    modules:[
+      { title:'ML Foundations', sub:'Supervised, unsupervised, bias-variance', duration:'70 min', completed:true,
+        content:'<h2>What is Machine Learning?</h2><p>ML trains a system to make predictions from data — rather than following explicitly programmed rules.</p><h3>Types</h3><ul><li><strong>Supervised</strong> — learns from labelled examples (spam detection, price prediction)</li><li><strong>Unsupervised</strong> — finds structure in unlabelled data (clustering, anomaly detection)</li><li><strong>Reinforcement</strong> — learns via rewards (game AI, robotics)</li></ul><h3>Bias-Variance Tradeoff</h3><ul><li><strong>High bias (underfitting)</strong> — model too simple, misses patterns</li><li><strong>High variance (overfitting)</strong> — memorises training data, fails on new examples</li></ul><pre><code>from sklearn.model_selection import train_test_split\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)</code></pre><div class="callout"><strong>💡 Golden rule:</strong> The test set is sacred. Evaluate against it only once — at the very end.</div>'
+      },
+      { title:'Neural Networks & Deep Learning', sub:'Perceptrons, backprop, CNNs, RNNs', duration:'80 min', completed:true,
+        content:'<h2>From Perceptrons to Deep Networks</h2><pre><code>import torch.nn as nn\n\nmodel = nn.Sequential(\n    nn.Linear(784, 256),\n    nn.ReLU(),\n    nn.Dropout(0.3),\n    nn.Linear(256, 10)\n)</code></pre><h3>Backpropagation</h3><p>Backprop computes gradients using the chain rule. An optimiser (SGD, Adam) then updates weights to reduce loss.</p><h3>Key Architectures</h3><ul><li><strong>CNN</strong> — convolutional filters for images</li><li><strong>RNN/LSTM</strong> — sequences and time series</li><li><strong>Transformer</strong> — attention mechanism, state-of-the-art for language</li></ul><div class="callout"><strong>💡 Activations:</strong> ReLU for hidden layers. Sigmoid for binary output. Softmax for multi-class. Avoid sigmoid/tanh in deep hidden layers.</div>'
+      },
+      { title:'LLMs & GenAI', sub:'Transformers, prompting, fine-tuning, RAG', duration:'75 min', completed:false,
+        content:'<h2>How LLMs Work</h2><p>LLMs (GPT, Claude, Gemini) are transformer-based models trained to predict the next token. They learn grammar, facts, reasoning, and coding from this single objective.</p><h3>Prompting Strategies</h3><pre><code># Zero-shot\n"Translate to French: The weather is beautiful."\n\n# Few-shot\n"Great product! → Positive\nTerrible service → Negative\nIt arrived on time. → ??"\n\n# Chain-of-thought\n"Solve step by step: If a train..."</code></pre><h3>RAG</h3><p>Retrieval-Augmented Generation combines a vector database with an LLM. Documents are embedded, stored, and retrieved at query time — giving the model current, factual context it wasn\'t trained on.</p><div class="callout"><strong>💡 Fine-tune vs RAG:</strong> Fine-tune for consistent style/behaviour; use RAG for current or proprietary knowledge. RAG is cheaper and easier to update.</div>'
+      }
+    ],
+    quiz:[
+      {q:'What does "overfitting" mean?',options:['Works well on train and test','Model too simple','Memorises training, fails on new data','Takes too long to train'],answer:2,explanation:'Overfitting (high variance) means the model learned training data too closely, including noise, and generalises poorly.'},
+      {q:'Default activation function for hidden layers?',options:['Sigmoid','Tanh','ReLU','Softmax'],answer:2,explanation:'ReLU is default because it is computationally simple and avoids vanishing gradients unlike sigmoid/tanh in deep networks.'},
+      {q:'Key innovation of the Transformer architecture?',options:['Convolutional filters','Recurrent hidden state','Self-attention mechanism','Dropout'],answer:2,explanation:'Self-attention lets every token attend to every other token, enabling parallelisation and capturing long-range dependencies.'},
+      {q:'What does RAG stand for?',options:['Random Aggregation Generation','Retrieval-Augmented Generation','Recurrent Attention Graph','Regularised Autoregressive Generation'],answer:1,explanation:'RAG retrieves relevant documents from a vector DB at query time and injects them into the LLM context.'},
+      {q:'What is the test set used for?',options:['Tuning hyperparameters','Training weights','Final unbiased evaluation only','Generating visualisations'],answer:2,explanation:'The test set must only be used once — for the final evaluation. Using it during development causes data leakage.'}
+    ]
+  },
+  product: {
+    title:'Product Management', icon:'📊', tag:'Business', tagClass:'tag-business',
+    desc:'Discovery, roadmaps, metrics, and stakeholder alignment that ships.',
+    hours:'4h', level:'Beginner', progress:0,
+    modules:[
+      { title:'User Discovery', sub:'Interviews, jobs-to-be-done, problem framing', duration:'50 min', completed:false,
+        content:'<h2>Building the Right Thing</h2><p>The biggest risk in product development is building something nobody wants. Discovery helps you deeply understand users before writing a line of code.</p><h3>User Interview Principles</h3><ul><li>Ask about <strong>past behaviour</strong>, not hypothetical futures</li><li>Use "Tell me about a time…" questions</li><li>Follow up with "Why?" at least three times</li><li>Never ask "Would you use this?" — people always say yes</li><li>Listen 80%, talk 20%</li></ul><h3>Jobs to Be Done</h3><p><em>"When I [situation], I want to [motivation], so I can [outcome]."</em></p><p>People don\'t buy products — they hire them to do a job.</p><div class="callout"><strong>💡 Rule:</strong> Fall in love with the problem, not your solution.</div>'
+      },
+      { title:'Roadmaps & Prioritisation', sub:'RICE, MoSCoW, Now/Next/Later', duration:'55 min', completed:false,
+        content:'<h2>What is a Roadmap?</h2><p>A roadmap communicates direction and intent — not a project plan. It answers: "What are we working on and why?"</p><h3>RICE Scoring</h3><pre><code>RICE = (Reach x Impact x Confidence) / Effort\n\nFeature A: (500 x 2 x 0.8) / 3 = 267\nFeature B: (200 x 3 x 0.9) / 1 = 540  <- higher</code></pre><h3>MoSCoW</h3><ul><li><strong>Must have</strong> — ship blocker</li><li><strong>Should have</strong> — important but not critical</li><li><strong>Could have</strong> — nice-to-have</li><li><strong>Won\'t have (this time)</strong> — explicitly out of scope</li></ul><div class="callout"><strong>💡 Saying no is a superpower.</strong> Every yes is a no to everything else.</div>'
+      },
+      { title:'Metrics & Success', sub:'North Star, OKRs, activation, retention', duration:'60 min', completed:false,
+        content:'<h2>Measuring What Matters</h2><h3>North Star Metric</h3><p>The one number that best captures the core value your product delivers. Examples:</p><ul><li>Spotify: Time spent listening</li><li>Airbnb: Nights booked</li><li>Slack: Messages sent</li></ul><h3>OKRs</h3><pre><code>Objective: Improve new user activation\n  KR1: D7 retention 32% → 45%\n  KR2: Time-to-first-value 8min → 3min\n  KR3: Onboarding completion 60% → 80%</code></pre><h3>The AARRR Funnel</h3><ul><li><strong>Acquisition</strong> — how users find you</li><li><strong>Activation</strong> — great first experience</li><li><strong>Retention</strong> — they come back</li><li><strong>Referral</strong> — they tell others</li><li><strong>Revenue</strong> — they pay</li></ul><div class="callout"><strong>💡 Retention first.</strong> No acquisition spend compensates for a leaky bucket.</div>'
+      }
+    ],
+    quiz:[
+      {q:'In RICE scoring, what does "C" stand for?',options:['Cost','Complexity','Confidence','Conversion'],answer:2,explanation:'RICE = Reach x Impact x Confidence / Effort. Confidence (50–100%) reflects certainty about Reach and Impact estimates.'},
+      {q:'What is a North Star Metric?',options:['Highest revenue line','Single metric capturing core user value','Monthly new users','CEO KPI'],answer:1,explanation:'The North Star Metric is the one number that best represents the value your product delivers to users.'},
+      {q:'In JTBD, users "hire" products to…',options:['Impress others','Complete a functional, social, or emotional job','Save money','Follow trends'],answer:1,explanation:'JTBD theory holds that customers hire products to make progress — fulfilling functional, social, or emotional goals.'},
+      {q:'In MoSCoW, which category is explicitly deferred?',options:['Must have','Could have',"Won't have (this time)",'Should have'],answer:2,explanation:'"Won\'t have (this time)" is explicitly out of scope, preventing scope creep by making exclusions visible.'},
+      {q:'What is the first stage of the AARRR funnel?',options:['Activation','Attribution','Acquisition','Adoption'],answer:2,explanation:'Acquisition is the first stage — how users discover and land in your product. Full funnel: Acquisition → Activation → Retention → Referral → Revenue.'}
+    ]
+  }
+};
+
+/* ── STATE ── */
+var currentCourse = 'python';
+var currentModIdx = 0;
+var currentQuestion = 0;
+var userAnswers = [];
+var timerInterval = null;
+var timeLeft = 120;
+var isAIQuiz = false;
+var aiQuestions = [];
+
+/* ── NAVIGATION ── */
+function goTo(view) {
+  document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); v.style.display=''; });
+  clearInterval(timerInterval);
+  var el = document.getElementById('view-'+view);
+  el.style.display = 'block';
+  requestAnimationFrame(function(){ el.classList.add('active'); });
+  updateBreadcrumb(view);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function updateBreadcrumb(view) {
+  var bc = document.getElementById('breadcrumb');
+  var c = COURSES[currentCourse];
+  var cl = c ? c.title : 'Course';
+  var html = '<span class="crumb" onclick="goTo(\'dashboard\')">Dashboard</span>';
+  if (view==='dashboard') { html='<span class="crumb active">Dashboard</span>'; }
+  else if (view==='course') { html+='<span class="sep">&#x203A;</span><span class="crumb active">'+cl+'</span>'; }
+  else if (view==='lesson') {
+    var m = c && c.modules[currentModIdx];
+    html+='<span class="sep">&#x203A;</span><span class="crumb" onclick="goTo(\'course\')">'+cl+'</span>';
+    html+='<span class="sep">&#x203A;</span><span class="crumb active">'+(m?m.title:'Lesson')+'</span>';
+  }
+  else if (view==='quiz') {
+    html+='<span class="sep">&#x203A;</span><span class="crumb" onclick="goTo(\'course\')">'+cl+'</span>';
+    html+='<span class="sep">&#x203A;</span><span class="crumb active">'+(isAIQuiz?'&#x2728; AI Quiz':'Quiz')+'</span>';
+  }
+  else if (view==='results') {
+    html+='<span class="sep">&#x203A;</span><span class="crumb" onclick="goTo(\'course\')">'+cl+'</span>';
+    html+='<span class="sep">&#x203A;</span><span class="crumb active">Results</span>';
+  }
+  bc.innerHTML = html;
+}
+
+/* ── DASHBOARD ── */
+function renderDashboard() {
+  var g = document.getElementById('courseGrid');
+  g.innerHTML = '';
+  Object.keys(COURSES).forEach(function(key){
+    var c = COURSES[key];
+    g.innerHTML += '<div class="course-card" onclick="openCourse(\''+key+'\')">'
+      +'<span class="card-tag '+c.tagClass+'">'+c.tag+'</span>'
+      +'<span class="card-icon">'+c.icon+'</span>'
+      +'<div class="card-title">'+c.title+'</div>'
+      +'<div class="card-desc">'+c.desc+'</div>'
+      +'<div class="card-meta"><span>📚 '+c.modules.length+' modules</span><span>⏱ '+c.hours+'</span><span class="pill">'+c.level+'</span></div>'
+      +'<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:'+c.progress+'%"></div></div>'
+      +'</div>';
+  });
+}
+
+/* ── COURSE ── */
+function openCourse(key) {
+  currentCourse = key; isAIQuiz = false;
+  var c = COURSES[key];
+  document.getElementById('courseIcon').textContent = c.icon;
+  document.getElementById('courseTitle').textContent = c.title;
+  document.getElementById('courseDesc').textContent = c.desc;
+  document.getElementById('courseBadges').innerHTML =
+    '<span class="badge">'+c.modules.length+' modules</span>'
+    +'<span class="badge">'+c.hours+'</span>'
+    +'<span class="badge">'+c.level+'</span>'
+    +'<span class="badge">Certificate</span>';
+  var list = document.getElementById('modulesList');
+  list.innerHTML = '';
+  c.modules.forEach(function(m, i){
+    list.innerHTML += '<div class="module-item'+(m.completed?' completed':'')+'" onclick="openLesson('+i+')">'
+      +'<div class="module-num">'+String(i+1).padStart(2,'0')+'</div>'
+      +'<div class="module-info"><div class="module-title">'+m.title+'</div><div class="module-sub">'+m.sub+'</div></div>'
+      +'<div class="module-duration">'+m.duration+'</div>'
+      +(m.completed?'<div class="module-check">&#x2713;</div>':'')
+      +'<div class="module-arrow">&#x2192;</div>'
+      +'</div>';
+  });
+  goTo('course');
+}
+
+/* ── LESSON ── */
+function openLesson(idx) {
+  currentModIdx = idx;
+  renderLesson();
+  goTo('lesson');
+}
+function renderLesson() {
+  var c = COURSES[currentCourse];
+  var m = c.modules[currentModIdx];
+  // Sidebar
+  var sb = document.getElementById('lessonSidebar');
+  sb.innerHTML = '<div class="sidebar-course-name">'+c.title+'</div>';
+  c.modules.forEach(function(mod, i){
+    sb.innerHTML += '<div class="sidebar-mod'+(i===currentModIdx?' active':'')+(mod.completed?' completed':'')+'" onclick="openLesson('+i+')">'
+      +'<span class="sidebar-num">'+String(i+1).padStart(2,'0')+'</span>'
+      +'<span class="sidebar-title">'+mod.title+'</span>'
+      +(mod.completed?'<span class="sidebar-check">&#x2713;</span>':'')
+      +'</div>';
+  });
+  document.getElementById('lessonEyebrow').textContent = c.title+' · Module '+(currentModIdx+1)+' of '+c.modules.length;
+  document.getElementById('lessonTitle').textContent = m.title;
+  document.getElementById('lessonMeta').innerHTML =
+    '<span>&#x23F1; '+m.duration+'</span>'
+    +'<span>'+(m.completed?'&#x2705; Completed':'&#x1F4D6; Not started')+'</span>';
+  document.getElementById('lessonBody').innerHTML = m.content;
+  var prev = currentModIdx > 0 ? c.modules[currentModIdx-1] : null;
+  var next = currentModIdx < c.modules.length-1 ? c.modules[currentModIdx+1] : null;
+  document.getElementById('lessonNavBar').innerHTML =
+    '<div>'+(prev?'<div class="lesson-nav-btn" onclick="openLesson('+(currentModIdx-1)+')"><span class="lesson-nav-label">&#x2190; Previous</span><span class="lesson-nav-title">'+prev.title+'</span></div>':'')+'</div>'
+    +'<button class="btn btn-ghost" onclick="goTo(\'course\')">Course Overview</button>'
+    +'<div style="text-align:right">'+(next?'<div class="lesson-nav-btn" onclick="openLesson('+(currentModIdx+1)+')"><span class="lesson-nav-label">Next &#x2192;</span><span class="lesson-nav-title">'+next.title+'</span></div>':'<div class="lesson-nav-btn" onclick="startQuiz()"><span class="lesson-nav-label">Finished? &#x2192;</span><span class="lesson-nav-title">Take the Quiz</span></div>')+'</div>';
+}
+
+/* ── QUIZ ── */
+function getQ() { return isAIQuiz ? aiQuestions : COURSES[currentCourse].quiz; }
+function startQuiz() { currentQuestion=0; userAnswers=[]; isAIQuiz=false; goTo('quiz'); renderQuestion(); startTimer(); }
+function startAIQuizPlay() { currentQuestion=0; userAnswers=[]; isAIQuiz=true; goTo('quiz'); renderQuestion(); startTimer(); }
+function renderQuestion() {
+  var qs=getQ(), q=qs[currentQuestion], total=qs.length;
+  document.getElementById('qNumDisplay').textContent = currentQuestion+1;
+  document.getElementById('qTotalDisplay').textContent = total;
+  document.getElementById('qLabel').innerHTML = 'Question '+(currentQuestion+1)+(isAIQuiz?' <span class="ai-mode-badge">&#x2728; AI Generated</span>':'');
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('quizProgressFill').style.width = ((currentQuestion+1)/total*100)+'%';
+  document.getElementById('nextBtn').textContent = currentQuestion===total-1?'Submit →':'Next →';
+  var grid=document.getElementById('optionsGrid');
+  grid.innerHTML='';
+  q.options.forEach(function(opt,i){
+    var d=document.createElement('div');
+    d.className='option';
+    d.innerHTML='<div class="option-indicator">'+String.fromCharCode(65+i)+'</div><div class="option-text">'+opt+'</div>';
+    d.onclick=function(){ selectOption(d,i); };
+    grid.appendChild(d);
+  });
+  if (userAnswers[currentQuestion]!=null && userAnswers[currentQuestion]!==undefined) {
+    var opts=grid.querySelectorAll('.option');
+    if (opts[userAnswers[currentQuestion]]) opts[userAnswers[currentQuestion]].classList.add('selected');
+  }
+}
+function selectOption(el,idx) {
+  document.querySelectorAll('.option').forEach(function(o){ o.classList.remove('selected'); });
+  el.classList.add('selected');
+  userAnswers[currentQuestion]=idx;
+}
+function nextQuestion(advance) {
+  if (!advance) userAnswers[currentQuestion]=null;
+  var total=getQ().length;
+  if (currentQuestion<total-1){ currentQuestion++; renderQuestion(); resetTimer(); }
+  else showResults();
+}
+function startTimer() {
+  timeLeft=120; updateTimerDisplay();
+  timerInterval=setInterval(function(){ timeLeft--; updateTimerDisplay(); if(timeLeft<=0){clearInterval(timerInterval);nextQuestion(false);} },1000);
+}
+function resetTimer(){ clearInterval(timerInterval); startTimer(); }
+function updateTimerDisplay(){
+  var m=String(Math.floor(timeLeft/60)).padStart(2,'0'),s=String(timeLeft%60).padStart(2,'0');
+  var el=document.getElementById('timerDisplay');
+  el.textContent=m+':'+s;
+  el.style.color=timeLeft<=15?'var(--accent3)':'var(--accent2)';
+}
+
+/* ── RESULTS ── */
+function showResults(){
+  clearInterval(timerInterval);
+  var qs=getQ(),total=qs.length,correct=0;
+  qs.forEach(function(q,i){ if(userAnswers[i]===q.answer) correct++; });
+  var wrong=qs.filter(function(q,i){ return userAnswers[i]!=null&&userAnswers[i]!==undefined&&userAnswers[i]!==q.answer; }).length;
+  var pct=Math.round((correct/total)*100);
+  var offset=364.4-(pct/100)*364.4;
+  document.getElementById('scoreNum').textContent=correct;
+  document.getElementById('scoreDenom').textContent='/ '+total;
+  document.getElementById('correctCount').textContent=correct;
+  document.getElementById('wrongCount').textContent=wrong;
+  document.getElementById('pctDisplay').textContent=pct+'%';
+  var heads=['Keep practicing!','Good effort!','Nice work!','Great work!','Outstanding! 🎉'];
+  document.getElementById('resultHeading').textContent=heads[Math.min(correct,heads.length-1)];
+  document.getElementById('resultSubtitle').textContent='You scored '+pct+'%'+(isAIQuiz?' on your AI quiz':'')+'. Review all answers below.';
+  var list=document.getElementById('reviewList');
+  list.innerHTML='';
+  qs.forEach(function(q,i){
+    var isC=userAnswers[i]===q.answer;
+    var skip=userAnswers[i]==null||userAnswers[i]===undefined;
+    var uv=skip?'Skipped':q.options[userAnswers[i]];
+    var cv=q.options[q.answer];
+    var item=document.createElement('div');
+    item.className='review-item';
+    item.innerHTML='<div class="review-item-header"><div class="review-status-dot '+(isC?'dot-correct':'dot-wrong')+'"></div><div class="review-q-text">'+(i+1)+'. '+q.q+'</div></div>'
+      +'<div class="review-answers"><div class="answer-row"><span class="answer-label label-user">Your answer</span><span class="answer-val '+(skip?'val-skipped':isC?'val-correct':'val-wrong')+'">'+uv+'</span></div>'
+      +(!isC?'<div class="answer-row"><span class="answer-label label-correct">Correct</span><span class="answer-val val-correct">'+cv+'</span></div>':'')
+      +'</div><div class="explanation-box"><div class="explanation-label">&#x1F4A1; Explanation</div><div class="explanation-text">'+q.explanation+'</div></div>';
+    list.appendChild(item);
+  });
+  goTo('results');
+  setTimeout(function(){ document.getElementById('scoreArc').style.strokeDashoffset=offset; },400);
+}
+function retakeQuiz(){ isAIQuiz?startAIQuizPlay():startQuiz(); }
+
+/* ── AI MODAL ── */
+function openAIModal(){
+  document.getElementById('aiModal').classList.add('open');
+  document.getElementById('modalForm').style.display='';
+  document.getElementById('aiLoading').classList.remove('show');
+  document.getElementById('generateBtn').disabled=false;
+  document.getElementById('aiTopic').value=COURSES[currentCourse]?COURSES[currentCourse].title:'';
+  document.getElementById('aiContext').value='';
+  var e=document.getElementById('aiError'); if(e)e.remove();
+}
+function closeAIModal(){ document.getElementById('aiModal').classList.remove('open'); }
+function handleModalClick(e){ if(e.target===document.getElementById('aiModal'))closeAIModal(); }
+function setLoadingStep(active){
+  for(var i=1;i<=4;i++){
+    var el=document.getElementById('step'+i);
+    el.classList.remove('active','done');
+    if(i<active)el.classList.add('done');
+    else if(i===active)el.classList.add('active');
+  }
+}
+async function generateAIQuiz(){
+  var topic=document.getElementById('aiTopic').value.trim();
+  var context=document.getElementById('aiContext').value.trim();
+  var count=document.getElementById('aiCount').value;
+  var difficulty=document.getElementById('aiDifficulty').value;
+  if(!topic){
+    document.getElementById('aiTopic').focus();
+    document.getElementById('aiTopic').style.borderColor='var(--accent3)';
+    setTimeout(function(){document.getElementById('aiTopic').style.borderColor='';},1500);
+    return;
+  }
+  document.getElementById('modalForm').style.display='none';
+  document.getElementById('aiLoading').classList.add('show');
+  setLoadingStep(1);
+  setTimeout(function(){setLoadingStep(2);},900);
+  setTimeout(function(){setLoadingStep(3);},1800);
+  setTimeout(function(){setLoadingStep(4);},2800);
+  var prompt='You are a quiz generator. Create exactly '+count+' multiple-choice quiz questions about: "'+topic+'".\n'
+    +(context?'Additional context: '+context+'\n':'')
+    +'Difficulty: '+difficulty+'.\n\n'
+    +'Return ONLY a valid JSON array — no markdown, no backticks. Each object:\n'
+    +'- "q": question string\n- "options": array of exactly 4 strings\n- "answer": integer 0-3\n- "explanation": 2-3 sentence explanation\n\n'
+    +'Example: [{"q":"What is...","options":["A","B","C","D"],"answer":2,"explanation":"Because..."}]';
+  try {
+    var response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})
+    });
+    if(!response.ok) throw new Error('API '+response.status);
+    var data=await response.json();
+    var raw=data.content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var cleaned=raw.replace(/```json|```/g,'').trim();
+    var questions=JSON.parse(cleaned);
+    if(!Array.isArray(questions)||questions.length===0) throw new Error('Invalid format');
+    questions.forEach(function(q,i){
+      if(!q.q||!Array.isArray(q.options)||q.options.length!==4||typeof q.answer!=='number'||!q.explanation)
+        throw new Error('Q'+(i+1)+' invalid');
+    });
+    aiQuestions=questions;
+    setTimeout(function(){closeAIModal();startAIQuizPlay();},400);
+  } catch(err) {
+    document.getElementById('aiLoading').classList.remove('show');
+    document.getElementById('modalForm').style.display='';
+    document.getElementById('generateBtn').disabled=false;
+    var existing=document.getElementById('aiError'); if(existing)existing.remove();
+    var errEl=document.createElement('div');
+    errEl.id='aiError';
+    errEl.style.cssText='margin-top:1rem;padding:10px 14px;border-radius:8px;background:rgba(255,107,107,0.1);border:1px solid rgba(255,107,107,0.25);color:#ff6b6b;font-size:13px;';
+    errEl.textContent='⚠️ Could not generate quiz. Check your connection and try again.';
+    document.getElementById('modalForm').appendChild(errEl);
+    setTimeout(function(){errEl.remove();},5000);
+  }
+}
+
+/* INIT */
+renderDashboard();
+</script>
+</body>
+</html>
